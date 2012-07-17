@@ -1,34 +1,53 @@
-#include "apue.h"
+/*
+ * This is my own ls. It only runs on a 64bit mac os x but could easily
+ * be adapated to run on other systems. This is a learning project.
+ */
+
+#include <sys/stat.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <dirent.h>
 
-// Why do I have to redefine them here?
-#define DT_DIR 4
-#define DT_REG 8
+/* #define _DARWIN_FEATURE_64_BIT_INODE */
 
-int main(int argc, char *argv[])
+int isDirectory(const char *path)
 {
-  DIR *dp;
-  struct dirent *dirp;
+  struct stat buf;
 
-  if (argc != 2) {
-    err_quit("Usage: %s directory_name", argv[0]);
+  if (lstat(path, &buf) == -1) {
+    printf("Error: can't read %s\n", path);
+    exit(1);
+  } else {
+    return S_ISDIR(buf.st_mode);
+  }
+}
+
+
+int main(int arcg, char *argv[])
+{
+
+  char path[] = ".";
+
+  if (isDirectory(path)) {
+    DIR *dir;
+    struct dirent *dp;
+    struct stat buf;
+
+    if ((dir = opendir(path)) == NULL) {
+      printf("Error: Can't open dir.\n");
+      exit(1);
+    }
+
+    while((dp = readdir(dir)) != NULL) {
+      fstat(dp->d_name, &buf);
+
+      printf("%s %d\n", dp->d_name, buf.st_birthtimespec.tv_sec);
+    }
+
+    closedir(dir);
+  } else {
+      //
   }
 
-  if ((dp = opendir(argv[1])) == NULL) {
-    err_sys("can't open %s\n", argv[1]);
-  }
-
-  // Here I'm checking what tipe of file we're dealing with
-  while ((dirp = readdir(dp)) != NULL) {
-    int d_type = dirp->d_type;
-    if (d_type == DT_DIR)
-      printf("DIR: %s\n", dirp->d_name);
-    else if (d_type == DT_REG)
-      printf("FILE: %s\n", dirp->d_name);
-    else
-      printf("%s\n", dirp->d_name);
-  }
-
-  closedir(dp);
   return 0;
 }
